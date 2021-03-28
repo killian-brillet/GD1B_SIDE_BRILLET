@@ -32,6 +32,9 @@ var config = {
     }
 };
 
+
+/*Déclaration de variables */
+
 var player;
 var ennemi;
 var jetpack;
@@ -58,8 +61,6 @@ function preload ()
     this.load.image('sky', 'assets/sky.png');
     this.load.image('tuile', 'assets/platform.png');
     this.load.tilemapTiledJSON('carte', 'Tiled/carte.json');
-    /*this.load.image('ground', 'assets/sol.png');
-    this.load.image('platform', 'assets/platform.png');*/
     this.load.image('jetpack', 'assets/essence.png');
     this.load.spritesheet('perso', 'assets/perso.png', { frameWidth: 30, frameHeight: 60 });
     this.load.spritesheet('ennemi', 'assets/monstre.png', { frameWidth: 45, frameHeight: 39 });
@@ -93,14 +94,6 @@ function create ()
 
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
-
-   /*platforms = this.physics.add.staticGroup();
-
-   platforms.create(640, 670, 'ground');
-
-   platforms.create(150, 300, 'platform');
-   platforms.create(1130, 400, 'platform');
-   platforms.create(640, 500, 'platform');*/
 
    player = this.physics.add.sprite(200, 750, 'perso');
    player.setGravity(0, 700)
@@ -235,6 +228,8 @@ function update ()
 
     onGround = player.body.blocked.down || player.body.blocked.up
 
+    /* Game over */
+
     if (player.y >= 1700 || player.y <= 50) {
         player.anims.play('dead');
         this.physics.pause();
@@ -337,6 +332,8 @@ function update ()
             player.setFlipY(false)
         }
     }
+
+    /*Attaque aérienne et double saut*/
 
     if (!onGround)
     {
