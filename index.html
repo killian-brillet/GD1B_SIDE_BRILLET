@@ -1,0 +1,484 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Jeu Killian Brillet</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var config = {
+    type: Phaser.AUTO,
+    width: 1280,
+    height: 720,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 },
+            debug: false
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
+
+var player;
+var ennemi;
+var jetpack;
+var jetpack2;
+var jetpack3;
+var jetpack4;
+var cursors;
+var gravite;
+var etatgravite = 0;
+var doublesaut = 0;
+var etatdoublesaut = false;
+var vie = 3;
+var inv = false
+var timer = 0
+var gameOver = false;
+var gameOvertext;
+var afficheVie;
+var afficheJetpack;
+
+var game = new Phaser.Game(config);
+
+function preload ()
+{
+    this.load.image('sky', 'assets/sky.png');
+    this.load.image('tuile', 'assets/platform.png');
+    this.load.tilemapTiledJSON('carte', 'Tiled/carte.json');
+    /*this.load.image('ground', 'assets/sol.png');
+    this.load.image('platform', 'assets/platform.png');*/
+    this.load.image('jetpack', 'assets/essence.png');
+    this.load.spritesheet('perso', 'assets/perso.png', { frameWidth: 30, frameHeight: 60 });
+    this.load.spritesheet('ennemi', 'assets/monstre.png', { frameWidth: 45, frameHeight: 39 });
+    this.load.image('un','assets/un.png');
+    this.load.image('deux','assets/deux.png');
+    this.load.image('trois','assets/trois.png');
+    this.load.image('mort','assets/dead.png');
+    this.load.image('f','assets/f.png');
+    this.load.image('nonf','assets/nonf.png');
+    this.load.image('tuto','assets/tuto.png');
+    this.load.image('gameover', 'assets/gameover.png')
+    this.load.image('win', 'assets/win.png')
+    this.load.image('fin', 'assets/fin.png')
+
+}
+
+function create ()
+{
+    /* Creation */
+
+    this.sky = this.add.image(640, 360, 'sky');
+    this.sky.setScrollFactor(0);
+
+    this.add.image(450,800, 'tuto')
+
+    const map = this.make.tilemap({key: 'carte'});
+    const jeudetuile = map.addTilesetImage('platform','tuile');
+    const calque = map.createStaticLayer('poutremetal', jeudetuile, 0, 0);
+    calque.setCollisionByExclusion(-1, true);
+
+
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
+   /*platforms = this.physics.add.staticGroup();
+
+   platforms.create(640, 670, 'ground');
+
+   platforms.create(150, 300, 'platform');
+   platforms.create(1130, 400, 'platform');
+   platforms.create(640, 500, 'platform');*/
+
+   player = this.physics.add.sprite(200, 750, 'perso');
+   player.setGravity(0, 700)
+    
+   /*Creation des jetpacks*/
+   jetpack = this.physics.add.sprite(1900, 450, 'jetpack');
+   jetpack.body.allowGravity = false;
+
+   jetpack2 = this.physics.add.sprite(4100, 200, 'jetpack');
+   jetpack2.body.allowGravity = false;
+
+   jetpack3 = this.physics.add.sprite(10100, 650, 'jetpack');
+   jetpack3.body.allowGravity = false;
+
+   jetpack4 = this.physics.add.sprite(13750, 660, 'jetpack');
+   jetpack4.body.allowGravity = false;
+
+
+   /*Creation des ennemis*/
+   ennemi = this.physics.add.sprite(1400, 400, 'ennemi');
+   ennemi.setGravity(0, 800);
+
+   ennemi2 = this.physics.add.sprite(5700, 400, 'ennemi');
+   ennemi2.setGravity(0, 800);
+
+   ennemi3 = this.physics.add.sprite(11550, 400, 'ennemi');
+   ennemi3.setGravity(0, 800);
+
+   ennemi4 = this.physics.add.sprite(12050, 400, 'ennemi');
+   ennemi4.setGravity(0, 800);
+
+   /*Creation de la fin*/
+   fin = this.physics.add.sprite(16200, 800, 'fin');
+   fin.setGravity(0, 1000);
+
+   /*Interface*/
+   this.afficheVie = this.add.image(100, 100, 'trois');
+   this.afficheVie.setScrollFactor(0);
+
+   this.afficheJetpack = this.add.image (100, 200, 'nonf', 2);
+   this.afficheJetpack.setScrollFactor(0);
+
+   this.cameras.main.startFollow(player, true, 0.05, 0.05);
+
+   /* Animations */
+   
+   this.anims.create({
+        key: 'left',
+        frames: this.anims.generateFrameNumbers('perso', { start: 2, end: 5 }),
+        frameRate: 10,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'immo',
+        frames: this.anims.generateFrameNumbers('perso', { start: 0, end: 1 }),
+        frameRate: 2,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'right',
+        frames: this.anims.generateFrameNumbers('perso', { start: 2, end: 5 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    
+    this.anims.create({
+        key: 'up',
+        frames: [ { key: 'perso', frame: 6} ],
+        framerate : 10
+    });
+    
+    this.anims.create({
+        key: 'down',
+        frames: [ { key: 'perso', frame: 8} ],
+        framerate : 10
+    });
+
+    this.anims.create({
+        key: 'jetpack',
+        frames: [ { key: 'perso', frame: 7} ],
+        framerate : 10
+    });
+    
+    this.anims.create({
+        key: 'dead',
+        frames: [ { key: 'perso', frame: 9} ],
+        framerate : 10
+    })
+
+    this.anims.create({
+        key: 'ennemi',
+        frames: this.anims.generateFrameNumbers('ennemi', { start: 0, end: 6 }),
+        frameRate : 10,
+        repeat: -1
+    })
+
+    /* Inputs */
+
+    cursors = this.input.keyboard.createCursorKeys();
+    gravite = this.input.keyboard.addKeys('F');
+
+    /* Colliders */
+
+    player.setCollideWorldBounds(true);
+
+    this.physics.add.collider(player, calque);
+    this.physics.add.collider(ennemi, calque);
+    this.physics.add.collider(ennemi2, calque);
+    this.physics.add.collider(ennemi3, calque);
+    this.physics.add.collider(ennemi4, calque);
+    this.physics.add.collider(fin, calque);
+
+
+    this.physics.add.overlap(player, jetpack, jetpackjump, null, this);
+    this.physics.add.overlap(player, jetpack2, jetpackjump, null, this);
+    this.physics.add.overlap(player, jetpack3, jetpackjump, null, this);
+    this.physics.add.overlap(player, jetpack4, jetpackjump, null, this);
+
+    this.physics.add.overlap(player, ennemi, hitEnnemi, null, this);
+    this.physics.add.overlap(player, ennemi2, hitEnnemi, null, this);
+    this.physics.add.overlap(player, ennemi3, hitEnnemi, null, this);
+    this.physics.add.overlap(player, ennemi4, hitEnnemi, null, this);
+
+    this.physics.world.addCollider(player, fin, hitFin, null, this);
+    
+}
+
+function update ()
+{
+
+    onGround = player.body.blocked.down || player.body.blocked.up
+
+    if (player.y >= 1700 || player.y <= 50) {
+        player.anims.play('dead');
+        this.physics.pause();
+        this.gameoverhud = this.add.image(640,360, 'gameover');
+        this.gameoverhud.setScrollFactor(0);
+        gameOver = true;
+    }
+
+    if (gameOver)
+    {
+        ennemi.anims.play('ennemi', false);
+        return;
+    }
+
+    /*Mouvement personnage*/
+
+    if (cursors.right.isDown)
+    {
+        player.setVelocityX(300);
+        player.setFlipX(false);
+    }
+    
+    else if (cursors.left.isDown)
+    {
+        player.setVelocityX(-300);
+        player.setFlipX(true);
+    }
+
+    else
+    {
+        player.setVelocityX(0); 
+    }
+
+    /*Animation déplacement*/
+
+    if (onGround)
+    {
+        if (player.body.velocity.x !== 0){
+            player.anims.play('left', true);
+        }
+        else{
+            player.anims.play('immo', true);
+        }
+    }
+
+    /*Jump Gravité normale*/
+
+    const jump = Phaser.Input.Keyboard.JustDown(cursors.up);
+
+    if (jump){
+        if (onGround && etatgravite === 0)
+        {
+            player.setVelocityY(-600);
+        }
+
+        if (doublesaut === 1 && !onGround && etatgravite === 0)
+        {
+            player.setVelocityY(-600);
+            --doublesaut;
+            this.afficheJetpack = this.add.image(100, 200, 'nonf')
+            this.afficheJetpack.setScrollFactor(0)
+            etatdoublesaut = true
+        }
+
+        /*Jump Gravité Inverse*/
+
+        if (onGround && etatgravite === 1)
+        {
+            player.setVelocityY(600);
+        }
+
+        if (doublesaut === 1 && !onGround && etatgravite === 1)
+        {
+            player.setVelocityY(600);
+            --doublesaut;
+            this.afficheJetpack = this.add.image(100, 200, 'nonf')
+            this.afficheJetpack.setScrollFactor(0)
+            etatdoublesaut = true
+        }
+    }
+
+
+
+    /*Inversion Gravité*/
+
+    const inversion = Phaser.Input.Keyboard.JustDown(gravite.F);
+
+    if (inversion && onGround)
+    {
+        if (etatgravite === 0)
+        {
+            player.setGravity(0, -700);
+            etatgravite = 1;
+            player.setFlipY(true)
+        }
+        else if (etatgravite === 1)
+        {
+            player.setGravity(0, 700);
+            etatgravite = 0;
+            player.setFlipY(false)
+        }
+    }
+
+    if (!onGround)
+    {
+        if (cursors.down.isDown){
+            if (etatgravite == 0){
+                player.setVelocity(0, 800)
+            }
+            if (etatgravite == 1){
+                player.setVelocity(0, -800)
+            }
+            etatdoublesaut = false
+            player.anims.play('down', true);
+        }
+        else if (etatdoublesaut === true){
+            player.anims.play('jetpack', true);
+        }
+        else {
+            player.anims.play('up', true);
+        }
+    }
+
+    if (onGround)
+    {
+        etatdoublesaut = false
+    }
+
+    /* Frame d'invu */
+
+    if (inv === true){
+        timer++;
+        if (timer === 180){
+            timer = 0;
+            player.setTint(0xffffff);
+            inv = false;
+        }
+    }
+
+    /* Ennemis */
+
+    ennemi2.anims.play('ennemi', true);
+    ennemi3.anims.play('ennemi', true);
+    ennemi4.anims.play('ennemi', true);
+
+    if (ennemi.x <= 850)
+    {
+        ennemi.setVelocityX(100);
+        ennemi.setFlipX(true);
+    }
+
+    if (ennemi.x >= 1350)
+    {
+        ennemi.setVelocityX(-100);
+        ennemi.setFlipX(false);
+        ennemi.anims.play('ennemi', true);
+    }
+
+    if (ennemi2.x <= 5400)
+    {
+        ennemi2.setVelocityX(100);
+        ennemi2.setFlipX(true);
+    }
+
+    if (ennemi2.x >= 5700)
+    {
+        ennemi2.setVelocityX(-100);
+        ennemi2.setFlipX(false);
+    }
+
+    if (ennemi3.x <= 11350)
+    {
+        ennemi3.setVelocityX(100);
+        ennemi3.setFlipX(true);
+    }
+
+    if (ennemi3.x >= 11550)
+    {
+        ennemi3.setVelocityX(-100);
+        ennemi3.setFlipX(false);
+    }
+
+    if (ennemi4.x <= 11750)
+    {
+        ennemi4.setVelocityX(100);
+        ennemi4.setFlipX(true);
+    }
+
+    if (ennemi4.x >= 12050)
+    {
+        ennemi4.setVelocityX(-100);
+        ennemi4.setFlipX(false);
+    }
+
+}
+
+function jetpackjump (player, jetpack)
+{
+    jetpack.disableBody(true, true);
+    doublesaut = 1;
+    this.afficheJetpack = this.add.image(100, 200, 'f')
+    this.afficheJetpack.setScrollFactor(0)
+}
+
+function hitFin(player, fin){
+    this.physics.pause();
+    this.finhud = this.add.image(640,360, 'win');
+    this.finhud.setScrollFactor(0);
+    gameover = true
+}
+
+function hitEnnemi (player, ennemi)
+{
+    if (cursors.down.isDown)
+    {
+        ennemi.disableBody(true, true);
+        player.setVelocityY(-200);
+    }
+    else if (inv === false)
+    {
+        inv = true;
+        vie--;
+        if (vie === 2){
+            this.afficheVie = this.add.image(100, 100, 'deux')
+            this.afficheVie.setScrollFactor(0)
+        }
+        if (vie === 1){
+            this.afficheVie = this.add.image(100, 100, 'un')
+            this.afficheVie.setScrollFactor(0)
+        }
+        player.setTint(0xff0000);
+        if (vie === 0){
+            this.physics.pause();
+            player.anims.play('dead');
+            this.afficheVie = this.add.image(100, 100, 'mort')
+            this.afficheVie.setScrollFactor(0);
+            this.gameoverhud = this.add.image(640,360, 'gameover');
+            this.gameoverhud.setScrollFactor(0);
+            gameOver = true;
+        }
+    }
+}
+
+</script>
+
+</body>
+</html>
